@@ -1,5 +1,7 @@
 import React, { useState } from 'react'
-import { TrendingUp, Plus, Settings, Search } from 'lucide-react'
+import { TrendingUp, Plus, Settings, Search, Loader2 } from 'lucide-react'
+import { analyzeMultipleUrls, ApiResponse } from '../services/apiService'
+import { ResultsTable } from './ResultsTable'
 
 interface SavedUrl {
   id: string
@@ -15,6 +17,8 @@ export function Dashboard() {
   const [savedUrls, setSavedUrls] = useState<SavedUrl[]>([])
   const [newUrlName, setNewUrlName] = useState('')
   const [newUrlAddress, setNewUrlAddress] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [results, setResults] = useState<{ url: string; result: ApiResponse | null; error?: string }[]>([])
 
   const handleAddUrl = () => {
     if (url.trim() && !urls.includes(url.trim())) {
@@ -23,10 +27,19 @@ export function Dashboard() {
     }
   }
 
-  const handleAnalyze = () => {
+  const handleAnalyze = async () => {
     if (urls.length > 0) {
-      // TODO: Implement analysis logic
-      console.log('Analyzing URLs:', urls)
+      setLoading(true)
+      setResults([])
+      
+      try {
+        const analysisResults = await analyzeMultipleUrls(urls)
+        setResults(analysisResults)
+      } catch (error) {
+        console.error('Analysis failed:', error)
+      } finally {
+        setLoading(false)
+      }
     }
   }
 
@@ -237,13 +250,24 @@ export function Dashboard() {
           {/* Analyze Button */}
           <button
             onClick={handleAnalyze}
-            disabled={urls.length === 0}
+            disabled={urls.length === 0 || loading}
             className="flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors font-medium"
           >
-            <TrendingUp className="w-5 h-5 mr-2" />
-            Analyze {urls.length} URL{urls.length !== 1 ? 's' : ''}
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Analyzing...
+              </>
+            ) : (
+              <>
+                <TrendingUp className="w-5 h-5 mr-2" />
+                Analyze {urls.length} URL{urls.length !== 1 ? 's' : ''}
+              </>
+            )}
           </button>
         </div>
+        
+        <ResultsTable results={results} />
       </div>
     </div>
   )
