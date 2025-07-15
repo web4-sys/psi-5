@@ -12,11 +12,16 @@ export function Header() {
   if (!user) return null
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-white/80 backdrop-blur-sm border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <h1 className="text-xl font-semibold text-gray-900">PSI Insight</h1>
+            <div className="flex items-center">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center mr-2">
+                <span className="text-white text-sm font-bold">P</span>
+              </div>
+              <h1 className="text-xl font-semibold text-gray-900">PSI Insight</h1>
+            </div>
           </div>
           
           <div className="flex items-center space-x-4">
