@@ -1,11 +1,33 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useAuth } from './hooks/useAuth'
 import { LoginForm } from './components/LoginForm'
 import { Header } from './components/Header'
-import { Loader2 } from 'lucide-react'
+import { UrlInput } from './components/UrlInput'
+import { ResultsPanel } from './components/ResultsPanel'
+import { analyzePage } from './services/psiApi'
+import { AnalysisResult } from './types/psi'
+import { Loader2, AlertCircle } from 'lucide-react'
 
 function App() {
   const { user, loading } = useAuth()
+  const [analyzing, setAnalyzing] = useState(false)
+  const [result, setResult] = useState<AnalysisResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleAnalyze = async (url: string, strategy: 'mobile' | 'desktop') => {
+    setAnalyzing(true)
+    setError(null)
+    setResult(null)
+
+    try {
+      const analysisResult = await analyzePage(url, strategy)
+      setResult(analysisResult)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred')
+    } finally {
+      setAnalyzing(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -25,21 +47,20 @@ function App() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to PSI Insight</h2>
-          <p className="text-gray-600 mb-6">
-            Analyze your website's performance and SEO metrics using Google Lighthouse technology.
-          </p>
-          
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="font-semibold text-blue-900 mb-2">Getting Started</h3>
-            <p className="text-blue-800 text-sm">
-              Your authentication is now set up! You can now add your page speed insights functionality here.
-              The existing project structure has been preserved and enhanced with user authentication.
-            </p>
+      <main className="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <UrlInput onAnalyze={handleAnalyze} loading={analyzing} />
+        
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-8">
+            <div className="flex items-center space-x-2">
+              <AlertCircle className="w-5 h-5 text-red-600" />
+              <p className="text-red-800 font-medium">Analysis Failed</p>
+            </div>
+            <p className="text-red-700 text-sm mt-1">{error}</p>
           </div>
-        </div>
+        )}
+        
+        {result && <ResultsPanel result={result} />}
       </main>
     </div>
   )
