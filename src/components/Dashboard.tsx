@@ -1,9 +1,20 @@
 import React, { useState } from 'react'
 import { TrendingUp, Plus, Settings, Search } from 'lucide-react'
 
+interface SavedUrl {
+  id: string
+  name: string
+  url: string
+  selected: boolean
+}
+
 export function Dashboard() {
   const [url, setUrl] = useState('')
   const [urls, setUrls] = useState<string[]>([])
+  const [showManageUrls, setShowManageUrls] = useState(false)
+  const [savedUrls, setSavedUrls] = useState<SavedUrl[]>([])
+  const [newUrlName, setNewUrlName] = useState('')
+  const [newUrlAddress, setNewUrlAddress] = useState('')
 
   const handleAddUrl = () => {
     if (url.trim() && !urls.includes(url.trim())) {
@@ -25,6 +36,46 @@ export function Dashboard() {
     }
   }
 
+  const handleSaveUrl = () => {
+    if (newUrlName.trim() && newUrlAddress.trim()) {
+      const newSavedUrl: SavedUrl = {
+        id: Date.now().toString(),
+        name: newUrlName.trim(),
+        url: newUrlAddress.trim(),
+        selected: false
+      }
+      setSavedUrls([...savedUrls, newSavedUrl])
+      setNewUrlName('')
+      setNewUrlAddress('')
+    }
+  }
+
+  const handleSelectAll = () => {
+    setSavedUrls(savedUrls.map(url => ({ ...url, selected: true })))
+  }
+
+  const handleDeselectAll = () => {
+    setSavedUrls(savedUrls.map(url => ({ ...url, selected: false })))
+  }
+
+  const handleLoadSelected = () => {
+    const selectedUrls = savedUrls.filter(url => url.selected).map(url => url.url)
+    const newUrls = [...urls]
+    selectedUrls.forEach(url => {
+      if (!newUrls.includes(url)) {
+        newUrls.push(url)
+      }
+    })
+    setUrls(newUrls)
+    setShowManageUrls(false)
+  }
+
+  const toggleUrlSelection = (id: string) => {
+    setSavedUrls(savedUrls.map(url => 
+      url.id === id ? { ...url, selected: !url.selected } : url
+    ))
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
       {/* Header */}
@@ -44,7 +95,10 @@ export function Dashboard() {
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-semibold text-gray-900">Website URLs to Analyze</h2>
             <div className="flex space-x-3">
-              <button className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+              <button 
+                onClick={() => setShowManageUrls(!showManageUrls)}
+                className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+              >
                 <Settings className="w-4 h-4 mr-2" />
                 Manage URLs
               </button>
@@ -57,6 +111,94 @@ export function Dashboard() {
               </button>
             </div>
           </div>
+
+          {/* Manage URLs Section */}
+          {showManageUrls && (
+            <div className="mb-8 p-6 bg-gray-50 rounded-xl border">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-medium text-gray-900">Saved URLs</h3>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={handleSelectAll}
+                    className="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 transition-colors"
+                  >
+                    Select All
+                  </button>
+                  <button
+                    onClick={handleDeselectAll}
+                    className="px-3 py-1 bg-gray-500 text-white text-sm rounded hover:bg-gray-600 transition-colors"
+                  >
+                    Deselect All
+                  </button>
+                  <button
+                    onClick={handleLoadSelected}
+                    disabled={!savedUrls.some(url => url.selected)}
+                    className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Load Selected
+                  </button>
+                </div>
+              </div>
+
+              {/* Add New URL Form */}
+              <div className="mb-6">
+                <h4 className="text-md font-medium text-gray-800 mb-3">Add New URL</h4>
+                <div className="flex space-x-3">
+                  <input
+                    type="text"
+                    value={newUrlName}
+                    onChange={(e) => setNewUrlName(e.target.value)}
+                    placeholder="URL Name (e.g., My Website)"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <input
+                    type="text"
+                    value={newUrlAddress}
+                    onChange={(e) => setNewUrlAddress(e.target.value)}
+                    placeholder="https://example.com"
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                  <button
+                    onClick={handleSaveUrl}
+                    disabled={!newUrlName.trim() || !newUrlAddress.trim()}
+                    className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  >
+                    Save URL
+                  </button>
+                </div>
+              </div>
+
+              {/* Saved URLs List */}
+              <div className="min-h-[100px] flex items-center justify-center">
+                {savedUrls.length > 0 ? (
+                  <div className="w-full space-y-2">
+                    {savedUrls.map((savedUrl) => (
+                      <div key={savedUrl.id} className="flex items-center space-x-3 p-3 bg-white rounded-lg border">
+                        <input
+                          type="checkbox"
+                          checked={savedUrl.selected}
+                          onChange={() => toggleUrlSelection(savedUrl.id)}
+                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-900">{savedUrl.name}</div>
+                          <div className="text-sm text-gray-500">{savedUrl.url}</div>
+                        </div>
+                        <button
+                          onClick={() => setSavedUrls(savedUrls.filter(u => u.id !== savedUrl.id))}
+                          className="text-red-500 hover:text-red-700 text-sm"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500">No saved URLs yet. Add some above!</p>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* URL Input */}
           <div className="mb-6">
