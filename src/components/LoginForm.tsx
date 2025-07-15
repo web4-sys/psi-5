@@ -21,18 +21,31 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
     setError('')
 
     try {
-      const { error } = isLogin 
-        ? await signIn(email, password)
-        : await signUp(email, password)
-
-      if (error) {
-        if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
-          setError('Please check your email and click the confirmation link before signing in.')
+      if (isLogin) {
+        const { error } = await signIn(email, password)
+        if (error) {
+          if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+            setError('Please check your email and click the confirmation link before signing in.')
+          } else {
+            setError(error.message)
+          }
         } else {
-          setError(error.message)
+          onSuccess?.()
         }
       } else {
-        onSuccess?.()
+        const { data, error } = await signUp(email, password)
+        if (error) {
+          setError(error.message)
+        } else if (!data.session) {
+          // Email confirmation is required
+          setError('')
+          setEmail('')
+          setPassword('')
+          setIsLogin(true)
+          setError('Account created! Please check your email and click the confirmation link, then sign in.')
+        } else {
+          onSuccess?.()
+        }
       }
     } catch (err) {
       setError('An unexpected error occurred')
